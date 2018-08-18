@@ -12,7 +12,12 @@ object Main {
     NonEmptyList.fromList(args.toList).toValidNel(usage)
       .andThen(ArgsParser.parse)
       .andThen(PoeSpecific.create)
-      .andThen(g => ???)
+      .andThen { g =>
+        println("starting creation")
+        val r = TranslationPipeline.translate(g).unsafeRunSync()
+        println("finished")
+        ???
+      }
   }
 
   def main(args:Array[String]):Unit = {

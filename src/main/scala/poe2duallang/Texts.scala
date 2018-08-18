@@ -13,7 +13,7 @@ object Texts {
     s"""
        | Provide arguments ${ArgsParser.gameDirArgKey}, ${ArgsParser.entryLangArgKey}, ${ArgsParser.targetLangArgKey}!
        | For example:
-       | ${ArgsParser.gameDirArgKey}=D:\\Games\\Steam\\steamapps\\common\\Pillars of Eternity II
+       | ${ArgsParser.gameDirArgKey}="D:\\Games\\Steam\\steamapps\\common\\Pillars of Eternity II"
        | ${ArgsParser.entryLangArgKey}=en
        | ${ArgsParser.targetLangArgKey}=de
        """.stripMargin

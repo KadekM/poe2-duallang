@@ -6,6 +6,9 @@ scalaVersion := "2.12.6"
 
 libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-core" % "1.2.0",
+  "org.typelevel" %% "cats-effect" % "1.0.0-RC2",
+  "org.scala-sbt" % "io" % "0.13.0",
+  "org.scala-lang.modules" %% "scala-xml" % "1.1.0",
   "org.scalatest" %% "scalatest" % "3.0.5" % "test"
 )
 
@@ -47,6 +50,5 @@ scalacOptions ++= Seq(
   "-Ywarn-infer-any",                  // Warn when a type argument is inferred to be `Any`.
   "-Ywarn-nullary-override",           // Warn when non-nullary `def f()' overrides nullary `def f'.
   "-Ywarn-nullary-unit",               // Warn when nullary methods return Unit.
-  "-Ywarn-numeric-widen",              // Warn when numerics are widened.
-  "-Ywarn-value-discard"               // Warn when non-Unit expression results are unused.
+  "-Ywarn-numeric-widen"              // Warn when numerics are widened.
 )
