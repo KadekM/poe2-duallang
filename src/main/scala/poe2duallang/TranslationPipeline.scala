@@ -4,7 +4,7 @@ import java.io.File
 
 import cats.effect.IO
 import poe2duallang.PoeSpecific.GameData
-import poe2duallang.utils.FileUtilsIO
+import poe2duallang.utils.{FileUtilsIO, XmlUtils}
 
 import scala.xml._
 import cats.implicits._
@@ -24,21 +24,61 @@ object TranslationPipeline {
     val rootPath = localRootDir.toPath
     val transPath = newLang.pathTo.toPath
 
-    val xs = newLang.listFiles.filterNot(_.isDirectory).map { newLangFile =>
-      val newLangPath = newLangFile.toPath
-      val relative = transPath.relativize(newLangPath)
-      translateFile(newLangFile, new File(translations.pathTo.toString, relative.toString))
+    val xmlTrans = translateTranslationsXml(newLang.langXml, translations)
+
+    val filesTrans = {
+      newLang.listFiles.filterNot(_.isDirectory).map { newLangFile =>
+        val newLangPath = newLangFile.toPath
+        val relative = transPath.relativize(newLangPath)
+        translateFile(newLangFile, new File(translations.pathTo.toString, relative.toString))
+      }.sequence_
     }
-    xs.sequence_
+
+    xmlTrans >> filesTrans
+  }
+
+  private def translateTranslationsXml(translationXml:File, translations:Poe2Localized):IO[Unit] = IO {
+    val (translatedName, translatedGuiString) = {
+      val xml = XML.loadFile(translations.langXml)
+      val language = xml.head
+      val name = XmlUtils.collectFirst(language, "Name").get
+      val gui = XmlUtils.collectFirst(language, "GUIString").get
+      (name, gui)
+    }
+
+    val run = new RewriteRule {
+      override def transform(n:Node): Seq[Node] = {
+        n match {
+          case elem: Elem if elem.label == "Name" =>
+            elem.copy(child = elem.child collect {
+              case Text(data) => Text(s"$data-to-$translatedName")
+            })
+
+          case elem: Elem if elem.label == "GUIString" =>
+            elem.copy(child = elem.child collect {
+              case Text(data) => Text(s"$data-to-$translatedGuiString")
+            })
+
+          case elem: Elem => elem.copy(child = elem.child.flatMap(transform))
+          case n => n
+        }
+      }
+    }
+
+    val langFile = XML.loadFile(translationXml)
+    val resultXml = run(langFile)
+    XML.save(filename = translationXml.getAbsolutePath,
+      node = resultXml,
+      xmlDecl = true)
   }
 
   private def translateFile(newLangFile:File, target:File):IO[Unit] = IO {
 
-    def collectId(n:Node):Option[String] = n.child.collectFirst { case e: Elem if e.label == "ID" => e.child.collectFirst { case Text(id) => id } }.flatten
-    def collectText(n:Node):Option[String] = n.child.collectFirst { case e: Elem if e.label == "DefaultText" => e.child.collectFirst { case Text(text) => text } }.flatten
+    def collectId(n:Node):Option[String] = XmlUtils.collectFirst(n, "ID")
+    def collectText(n:Node):Option[String] = XmlUtils.collectFirst(n, "DefaultText")
 
     val newLangXml = XML.loadFile(newLangFile)
-    val targetTranslations = {
+    val targetTranslations:Map[String, String] = {
       XML.loadFile(target).descendant.collect {
         case elem: Elem if elem.label == "Entry" =>
           val id = collectId(elem)
@@ -56,11 +96,9 @@ object TranslationPipeline {
           case elem: Elem if elem.label == "DefaultText" =>
             elem.copy(child = elem.child collect {
               case Text(data) =>
-                val removeQuotes = data.drop(1).dropRight(1)
                 val trans = targetTranslations(entryId) // todo: unsafe
-                val translated = s"$removeQuotes «$trans»"
-                val withQuotes = s""""$translated""""
-                Text(withQuotes)
+                val translated = s"$data «$trans»"
+                Text(translated)
             })
           case elem: Elem => elem.copy(child = elem.child.flatMap(transform))
           case n => n

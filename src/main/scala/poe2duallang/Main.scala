@@ -13,10 +13,11 @@ object Main {
       .andThen(ArgsParser.parse)
       .andThen(PoeSpecific.create)
       .andThen { g =>
-        println("starting creation")
-        val r = TranslationPipeline.translate(g).unsafeRunSync()
-        println("finished")
-        ???
+        TranslationPipeline.translate(g)
+          .attempt
+          .unsafeRunSync()
+          .toValidatedNel
+          .leftMap[NonEmptyList[String]](x => x.map(_.getMessage))
       }
   }
 
