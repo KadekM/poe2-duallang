@@ -6,7 +6,10 @@ import cats.effect.IO
 import poe2duallang.PoeSpecific.GameData
 import poe2duallang.utils.FileUtilsIO
 
+import scala.xml._
 import cats.implicits._
+
+import scala.xml.transform.RewriteRule
 
 object TranslationPipeline {
 
@@ -30,9 +33,62 @@ object TranslationPipeline {
   }
 
   private def translateFile(newLangFile:File, target:File):IO[Unit] = IO {
-    println(newLangFile.getAbsolutePath)
-    println(target.getAbsolutePath)
-    ???
+
+    def collectId(n:Node):Option[String] = n.child.collectFirst { case e: Elem if e.label == "ID" => e.child.collectFirst { case Text(id) => id } }.flatten
+    def collectText(n:Node):Option[String] = n.child.collectFirst { case e: Elem if e.label == "DefaultText" => e.child.collectFirst { case Text(text) => text } }.flatten
+
+    val newLangXml = XML.loadFile(newLangFile)
+    val targetTranslations = {
+      XML.loadFile(target).descendant.collect {
+        case elem: Elem if elem.label == "Entry" =>
+          val id = collectId(elem)
+          val trans = collectText(elem)
+
+          (id, trans).mapN { (k, v) => k -> v }
+      }
+        .collect { case Some(x) => x }
+        .toMap
+    }
+
+    def textTrans(entryId:String) = new RewriteRule {
+      override def transform(n:Node): Seq[Node] = {
+        n match {
+          case elem: Elem if elem.label == "DefaultText" =>
+            elem.copy(child = elem.child collect {
+              case Text(data) =>
+                val removeQuotes = data.drop(1).dropRight(1)
+                val trans = targetTranslations(entryId) // todo: unsafe
+                val translated = s"$removeQuotes «$trans»"
+                val withQuotes = s""""$translated""""
+                Text(withQuotes)
+            })
+          case elem: Elem => elem.copy(child = elem.child.flatMap(transform))
+          case n => n
+        }
+      }
+    }
+
+    val translateRule = new RewriteRule {
+      override def transform(n:Node): Seq[Node] = {
+        n match {
+          case elem: Elem if elem.label == "Entry" =>
+            collectId(elem) match {
+              case Some(id) =>
+                elem.copy(child = elem.child.flatMap(textTrans(id)))
+              case None =>
+                println(s"Failed to translate $elem")
+                elem
+            }
+          case elem: Elem => elem.copy(child = elem.child.flatMap(transform))
+          case n => n
+        }
+      }
+    }
+
+    val resultXml = translateRule(newLangXml)
+    XML.save(filename = newLangFile.getAbsolutePath,
+      node = resultXml,
+      xmlDecl = true)
   }
 
   private def createStructure(data:GameData):IO[Poe2Localized] = {
