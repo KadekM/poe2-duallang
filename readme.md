@@ -1,4 +1,4 @@
-# Pillars of Eternity II dual-language mod
+# Pillars of Eternity II dual-language
 
 ![ingame](https://raw.githubusercontent.com/KadekM/poe2-duallang/master/github/settings.jpg)
 
