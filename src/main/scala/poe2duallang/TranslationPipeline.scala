@@ -100,6 +100,7 @@ object TranslationPipeline {
               case Text(data) if shouldTranslate(data) =>
                 val trans = targetTranslations.get(entryId)
                 val text = trans match {
+                  case Some(t) if t.trim == data.trim => data
                   case Some(t) => s"$data «$t»"
                   case None =>
                     println(s"Not found translation for key=$entryId, text=$data")
