@@ -91,11 +91,13 @@ object TranslationPipeline {
     }
 
     def textTrans(entryId:String) = new RewriteRule {
+      def shouldTranslate(s:String):Boolean = s.exists(_.isLetter)
+
       override def transform(n:Node): Seq[Node] = {
         n match {
           case elem: Elem if elem.label == "DefaultText" =>
-            elem.copy(child = elem.child collect {
-              case Text(data) =>
+            elem.copy(child = elem.child.collect {
+              case Text(data) if shouldTranslate(data) =>
                 val trans = targetTranslations.get(entryId)
                 val text = trans match {
                   case Some(t) => s"$data «$t»"
@@ -104,6 +106,8 @@ object TranslationPipeline {
                     s"$data «?»"
                 }
                 Text(text)
+
+              case t@Text(_) => t
             })
           case elem: Elem => elem.copy(child = elem.child.flatMap(transform))
           case n => n
