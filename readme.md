@@ -1,9 +1,11 @@
-#Pillars of Eternity II dual-language mod
+# Pillars of Eternity II dual-language mod
 
 This script creates new language containing both texts from source and target language in some format, i.e.:
 `"Some english text <<some translated text>>"`
 
 ## Usage
+[Download latest release](https://github.com/KadekM/poe2-duallang/releases)
+
 Unzip, and run with your desired language combination using command line:
 ```
 poe2-duallang-0.1>bin\poe2-duallang.bat gameDir="D:\Games\Steam\steamapps\common\Pillars of Eternity II" entryLang=de targetLang=en
