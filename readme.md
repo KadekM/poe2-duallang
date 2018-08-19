@@ -10,3 +10,6 @@ poe2-duallang-0.1>bin\poe2-duallang.bat gameDir="D:\Games\Steam\steamapps\common
 ```
 
 You should see now new language in options.
+
+![how to run](https://raw.githubusercontent.com/KadekM/poe2-duallang/master/github/run.jpg)
+![ingame](https://raw.githubusercontent.com/KadekM/poe2-duallang/master/github/settings.jpg)
