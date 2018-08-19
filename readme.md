@@ -5,6 +5,10 @@
 This script creates new language containing both texts from source and target language in some format, i.e.:
 `"Some english text <<some translated text>>"`
 
+## Requirements
+
+Java8 or higher installed
+
 ## Usage
 [Download latest release](https://github.com/KadekM/poe2-duallang/releases)
 
