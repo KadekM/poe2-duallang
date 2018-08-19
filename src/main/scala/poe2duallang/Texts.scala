@@ -5,7 +5,7 @@ import cats.data.NonEmptyList
 object Texts {
 
   def reportErrs(errs: NonEmptyList[String]):String =
-    s"""Following errors were detected: ${errs.toList.mkString(",")}"""
+    s"""Following errors were detected: ${errs.toList.mkString("\n")}"""
 
   val invalidArgumentCount = s"Invalid argument count!"
 

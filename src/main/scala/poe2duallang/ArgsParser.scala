@@ -13,11 +13,16 @@ object ArgsParser {
   val keys:NonEmptyList[String] = NonEmptyList.of(gameDirArgKey, entryLangArgKey, targetLangArgKey)
 
   def parse(args:NonEmptyList[String]):ValidatedNel[String, ProgramArgs] = {
+    // if the format is different (a=b => List(a,b)), convert to coherent List(a=b)
+    val normalizedArgs = if (args.size == 6) {
+      val xs = args.toList
+      NonEmptyList.of(s"${xs(0)}=${xs(1)}", s"${xs(2)}=${xs(3)}", s"${xs(4)}=${xs(5)}")
+    } else args
 
-    if (args.size != keys.size) {
+    if (normalizedArgs.size != keys.size) {
       Validated.invalidNel(s"${Texts.invalidArgumentCount} ${Texts.usage}")
     } else {
-      val kv:Validated[String, NonEmptyList[(String, String)]] = args.map { arg =>
+      val kv:Validated[String, NonEmptyList[(String, String)]] = normalizedArgs.map { arg =>
         val arr = arg.split("=").toList
         arr match {
           case k :: _ :: Nil if !keys.exists(_ == k)  => Validated.invalid(s"Key $k is meaningles")

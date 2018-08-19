@@ -96,9 +96,14 @@ object TranslationPipeline {
           case elem: Elem if elem.label == "DefaultText" =>
             elem.copy(child = elem.child collect {
               case Text(data) =>
-                val trans = targetTranslations(entryId) // todo: unsafe
-                val translated = s"$data «$trans»"
-                Text(translated)
+                val trans = targetTranslations.get(entryId)
+                val text = trans match {
+                  case Some(t) => s"$data «$t»"
+                  case None =>
+                    println(s"Not found translation for key=$entryId, text=$data")
+                    s"$data «?»"
+                }
+                Text(text)
             })
           case elem: Elem => elem.copy(child = elem.child.flatMap(transform))
           case n => n
