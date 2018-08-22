@@ -93,6 +93,26 @@ object TranslationPipeline {
     def textTrans(entryId:String) = new RewriteRule {
       def shouldTranslate(s:String):Boolean = s.exists(_.isLetter)
 
+      def translateFmt(from:String, trans:String):String = {
+        val quotation = "\""
+
+        def quoteTrans(s:String) = s"«$s»"
+        def sanitize(s:String):String = s.replaceAll(s"$quotation$quotation", quotation)
+
+/*      disabled until figured out
+        val (fromSplit, toSplit) = (sanitize(from).split(quotation), sanitize(trans).split(quotation))
+        // format is: `"someone said" some action`
+        val t = if (fromSplit.size == 3 && toSplit.size == 3) {
+          val fst = s"${fromSplit(1)} ${quoteTrans(toSplit(1))}"
+          val snd = s"${fromSplit(2)} ${quoteTrans(toSplit(2))}"
+          s"${quotation}$fst${quotation}$snd"
+        } else {
+          s"$from ${quoteTrans(trans)}"
+        }*/
+
+        s"$from ${quoteTrans(trans)}"
+      }
+
       override def transform(n:Node): Seq[Node] = {
         n match {
           case elem: Elem if elem.label == "DefaultText" =>
@@ -101,7 +121,7 @@ object TranslationPipeline {
                 val trans = targetTranslations.get(entryId)
                 val text = trans match {
                   case Some(t) if t.trim == data.trim => data
-                  case Some(t) => s"$data «$t»"
+                  case Some(t) => translateFmt(data, t)
                   case None =>
                     println(s"Not found translation for key=$entryId, text=$data")
                     s"$data «?»"
